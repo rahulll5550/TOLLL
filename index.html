@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Data Cleaner Pro - Post Commissioning & NMS Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body>
+<main class="app">
+  <div class="mac-window-bar">
+    <div class="mac-dots">
+      <span class="mac-dot red"></span>
+      <span class="mac-dot yellow"></span>
+      <span class="mac-dot green"></span>
+    </div>
+    <div class="mac-title">Excel Data Cleaner Pro</div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <h1>Excel Data Cleaner Pro</h1>
+      <p>Clean, split numbered issues, preview results, and export directly to Excel with ease.</p>
+    </div>
+    <button id="btnSampleData" class="secondary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Load Sample Data
+    </button>
+  </header>
+
+  <section class="card">
+    <div class="section-title">
+      <div>
+        <h2>Choose Data Format</h2>
+        <p>Select which format option you want to process your input Excel data into.</p>
+      </div>
+    </div>
+    <div class="format-grid">
+      <label class="format-card active" id="cardPostCommissioning">
+        <input type="radio" name="dataFormat" value="postCommissioning" checked>
+        <span class="format-badge">Post Commissioning</span>
+        <span class="format-title">1. Post Commissioning</span>
+        <span class="format-desc">Main Data → Section • Date • Train No/Loco No • Remarks</span>
+      </label>
+      <label class="format-card" id="cardNMSData">
+        <input type="radio" name="dataFormat" value="nmsData">
+        <span class="format-badge">NMS Format</span>
+        <span class="format-title">2. NMS Data</span>
+        <span class="format-desc">Main Data → Date • Station • Loco No • Train Number • OEM • Direction • Time • Fault Type • NMS Observations • Cause</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <div>
+        <h2>Paste Excel Data</h2>
+        <p id="pasteSubtext">Paste your sheet data directly from Excel.</p>
+      </div>
+      <button id="btnClearInput" class="ghost">Clear Input</button>
+    </div>
+    <textarea id="excelInput" placeholder="Paste tab-separated Excel data here..."></textarea>
+
+    <div class="options">
+      <label id="lblMergeTrainLoco"><input type="checkbox" id="chkMergeTrainLoco" checked> Merge Train No + Loco No</label>
+      <label><input type="checkbox" id="chkCleanPrefix"> Remove issue numbering</label>
+      <label><input type="checkbox" id="chkTrimText" checked> Trim text</label>
+      <label><input type="checkbox" id="chkPreserveBlank"> Preserve blank rows</label>
+      <label class="select-wrap">
+        <span>Issue column</span>
+        <select id="colSelect">
+          <option value="__AUTO__">Auto-Detect Issue Column</option>
+          <option value="__NONE__">No Issue Column (Do not split)</option>
+        </select>
+      </label>
+      <label class="select-wrap">
+        <span>Numbering pattern</span>
+        <select id="patternSelect">
+          <option value="auto">Auto</option>
+          <option value="dot">1. Issue</option>
+          <option value="parenthesis">1) Issue</option>
+          <option value="dash">1 - Issue</option>
+        </select>
+      </label>
+    </div>
+    <div class="hint" id="formatHint">Post Commissioning format: combines Train No + Loco No and splits numbered entries in Remarks.</div>
+    <div class="actions">
+      <button id="btnProcess" class="primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Process Data
+      </button>
+      <button id="btnClearAll" class="ghost">Reset All</button>
+    </div>
+  </section>
+
+  <section class="metrics">
+    <div class="metric-card">
+      <strong id="metricInputRows">0</strong>
+      <span>Rows Received</span>
+    </div>
+    <div class="metric-card">
+      <strong id="metricOutputRows">0</strong>
+      <span>Rows Generated</span>
+    </div>
+    <div class="metric-card">
+      <strong id="metricSplitCount">0</strong>
+      <span>Issues Separated</span>
+    </div>
+    <div class="metric-card">
+      <strong id="metricRatio">1.00x</strong>
+      <span>Expansion Ratio</span>
+    </div>
+  </section>
+
+  <section class="card hidden" id="dashboardSection">
+    <div class="section-title">
+      <div>
+        <h2>Day-by-Day Dashboard Summary</h2>
+        <p>Date-wise count of FSB, EB, SR, LS, and Unique Locos</p>
+      </div>
+      <div class="output-actions">
+        <button id="btnCopyDashboard" class="copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Dashboard Summary
+        </button>
+      </div>
+    </div>
+    
+    <div class="dashboard-kpi-grid">
+      <div class="kpi-card kpi-loco">
+        <div class="kpi-title">Total Unique Locos</div>
+        <div class="kpi-val" id="dashTotalLoco">0</div>
+        <div class="kpi-sub">Across all dates</div>
+      </div>
+      <div class="kpi-card kpi-fsb">
+        <div class="kpi-title">FSB Count</div>
+        <div class="kpi-val" id="dashTotalFSB">0</div>
+        <div class="kpi-sub">Full Service Brake</div>
+      </div>
+      <div class="kpi-card kpi-eb">
+        <div class="kpi-title">EB Count</div>
+        <div class="kpi-val" id="dashTotalEB">0</div>
+        <div class="kpi-sub">Emergency Brake</div>
+      </div>
+      <div class="kpi-card kpi-sr">
+        <div class="kpi-title">SR Count</div>
+        <div class="kpi-val" id="dashTotalSR">0</div>
+        <div class="kpi-sub">Speed Restriction</div>
+      </div>
+      <div class="kpi-card kpi-ls">
+        <div class="kpi-title">LS Count</div>
+        <div class="kpi-val" id="dashTotalLS">0</div>
+        <div class="kpi-sub">Loco Stop</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="dashboardTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Locos (Unique)</th>
+            <th>FSB Count</th>
+            <th>EB Count</th>
+            <th>SR Count</th>
+            <th>LS Count</th>
+            <th>Total Faults</th>
+          </tr>
+        </thead>
+        <tbody id="dashboardTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <div>
+        <h2>Transformed Output Table</h2>
+        <p id="tableInfo">Showing 0 rows</p>
+      </div>
+      <div class="output-actions">
+        <button id="btnCopyExcel" class="copy" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy to Excel
+        </button>
+        <button id="btnDownloadExcel" class="download" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Excel
+        </button>
+      </div>
+    </div>
+    <input id="tableSearch" class="search" type="search" placeholder="Search output rows..." disabled>
+    <div id="emptyState" class="empty">Process your Excel data to see the transformed table.</div>
+    <div id="tableWrap" class="table-wrap hidden">
+      <table id="outputTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<div id="toastContainer" class="toast-container"></div>
+<script src="script.js"></script>
+</body>
+</html>
